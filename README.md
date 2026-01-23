@@ -1,20 +1,16 @@
-# Ollama zeropoint app
+# Redis zeropoint app
 
-This module defines the Ollama app for zeropoint os using Terraform and the Docker provider.
+This module defines a Redis server for zeropoint OS using Terraform and the Docker provider.
 
 ## Resources Created
 
 - **Docker Image**: Builds from local `Dockerfile` with platform-specific targeting
-- **Docker Container**: Ollama server with optional GPU support
+- **Docker Container**: Redis server
 
 ## Requirements
 
 - Terraform >= 1.0
 - Docker provider ~> 3.0
-- GPU support (optional):
-  - NVIDIA: NVIDIA Container Runtime
-  - AMD: ROCm drivers
-  - Intel: Intel GPU drivers
 
 ## Usage
 
@@ -24,10 +20,9 @@ This module defines the Ollama app for zeropoint os using Terraform and the Dock
 curl -X POST http://<zeropoint-node-name>:2370/modules/install \
   -H "Content-Type: application/json" \
   -d '{
-    "source": "https://github.com/zeropoint-os/ollama.git", 
-    "module_id": "ollama",
-    "arch": "arm64",
-    "gpu_vendor": "nvidia"
+    "source": "https://github.com/zeropoint-os/redis.git", 
+    "module_id": "redis",
+    "arch": "amd64"
   }'
 ```
 
@@ -43,10 +38,9 @@ The install will be performed using Docker-in-Docker.
 
 | Name | Type | Description | Default |
 |------|------|-------------|---------|
-| `zp_app_id` | string | Unique identifier for this app instance (injected by zeropoint) | `"ollama"` |
+| `zp_module_id` | string | Unique identifier for this module instance (injected by zeropoint) | `"redis"` |
 | `zp_network_name` | string | Pre-created Docker network name (injected by zeropoint) | (required) |
 | `zp_arch` | string | Target architecture: amd64, arm64, etc. (injected by zeropoint) | `"amd64"` |
-| `zp_gpu_vendor` | string | GPU vendor: nvidia, amd, intel, or empty for no GPU (injected by zeropoint) | `""` |
 | `zp_module_storage` | string | Host path for persistent storage (injected by zeropoint) | (required) |
 
 ## Outputs
@@ -59,15 +53,12 @@ The install will be performed using Docker-in-Docker.
 
 This module supports multiple GPU vendors:
 
-- **NVIDIA**: Sets `runtime = "nvidia"` and `gpus = "all"`
-- **AMD/Intel**: Sets `gpus = "all"` (uses default runtime with device access)
-- **No GPU**: Both runtime and gpus set to null (CPU-only mode)
-
-The GPU vendor is auto-detected by zeropoint and injected via the `gpu_vendor` variable.
+# Persistence
+This module mounts `${zp_module_storage}/data` into the container's `/data` directory so Redis data is persisted on the host.
 
 ## Network & Service Discovery
 
-- **Internal Port**: 11434 (Ollama API)
+- **Internal Port**: 6379 (Redis)
 - **Network**: Uses pre-created network provided by zeropoint via `zp_network_name`
 - **No Host Ports**: Service discovery via DNS only
 - **Container Name**: `${zp_module_id}-main` (e.g., `ollama-main`)
@@ -79,7 +70,7 @@ The GPU vendor is auto-detected by zeropoint and injected via the `gpu_vendor` v
 Other apps linked to Ollama can access it via DNS:
 
 ```bash
-curl http://ollama-main:11434/api/tags
+redis-cli -h redis-main ping
 ```
 
 ### From Host (via Exposure)

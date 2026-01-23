@@ -14,6 +14,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gnupg \
     lsb-release \
     ca-certificates \
+    redis-tools \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Terraform CLI

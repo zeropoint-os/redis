@@ -1,7 +1,7 @@
-FROM ollama/ollama:latest
+FROM redis:7
 
-# Expose the default Ollama port
-EXPOSE 11434
+# Expose the default Redis port
+EXPOSE 6379
 
-# Set the default command to run Ollama server
-CMD ["serve"]
+# Run Redis server
+CMD ["redis-server"]

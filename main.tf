@@ -9,7 +9,7 @@ terraform {
 
 variable "zp_module_id" {
   type        = string
-  default     = "ollama"
+  default     = "redis"
   description = "Unique identifier for this module instance (user-defined, freeform)"
 }
 
@@ -24,19 +24,13 @@ variable "zp_arch" {
   description = "Target architecture - amd64, arm64, etc. (injected by zeropoint)"
 }
 
-variable "zp_gpu_vendor" {
-  type        = string
-  default     = ""
-  description = "GPU vendor - nvidia, amd, intel, or empty for no GPU (injected by zeropoint)"
-}
-
 variable "zp_module_storage" {
   type        = string
   description = "Host path for persistent storage (injected by zeropoint)"
 }
 
-# Build Ollama image from local Dockerfile
-resource "docker_image" "ollama" {
+# Build Redis image from local Dockerfile
+resource "docker_image" "redis" {
   name = "${var.zp_module_id}:latest"
   build {
     context    = path.module
@@ -46,10 +40,10 @@ resource "docker_image" "ollama" {
   keep_locally = true
 }
 
-# Main Ollama container (no host port binding)
-resource "docker_container" "ollama_main" {
+# Main Redis container (no host port binding)
+resource "docker_container" "redis_main" {
   name  = "${var.zp_module_id}-main"
-  image = docker_image.ollama.image_id
+  image = docker_image.redis.image_id
 
   # Network configuration (provided by zeropoint)
   networks_advanced {
@@ -59,47 +53,39 @@ resource "docker_container" "ollama_main" {
   # Restart policy
   restart = "unless-stopped"
 
-  # GPU access (conditional based on vendor)
-  runtime = var.zp_gpu_vendor == "nvidia" ? "nvidia" : null
-  gpus    = var.zp_gpu_vendor != "" ? "all" : null
-
-  # Environment variables
-  env = [
-    "OLLAMA_HOST=0.0.0.0",
-  ]
-
-  # Persistent storage
+  # Persistent storage for Redis data
   volumes {
-    host_path      = "${var.zp_module_storage}/.ollama"
-    container_path = "/root/.ollama"
+    host_path      = "${var.zp_module_storage}/data"
+    container_path = "/data"
   }
 
   # Ports exposed internally (no host binding)
-  # Port 11434 is accessible via service discovery (DNS)
+  # Port 6379 is accessible via service discovery (DNS)
 }
 
 # Outputs for zeropoint (container resource only)
-output "main" {
-  value       = docker_container.ollama_main
-  description = "Main Ollama container"
+output "redis_main" {
+  value       = docker_container.redis_main
+  description = "Main Redis container"
 }
 
 # Service ports for external access (defined but not bound to host)
-output "main_ports" {
+# Service ports for external access (defined but not bound to host)
+output "redis_main_ports" {
   value = {
-    api = {
-      port        = 11434                   # Ollama API port
-      protocol    = "http"                  # The protocol used
-      transport   = "tcp"                   # Transport layer
-      description = "Ollama API endpoint"   # Description of the port
-      default     = true                    # Default port for the service
+    redis = {
+      port        = 6379
+      protocol    = "redis"
+      transport   = "tcp"
+      description = "Redis service port"
+      default     = true
     }
   }
   description = "Service ports for external access"
 }
 
 # Ollama API URL for easy consumption by other modules
-output "ollama_api_url" {
-  value       = "http://${docker_container.ollama_main.name}:11434"
-  description = "Ollama API URL accessible via Docker network"
+output "redis_url" {
+  value       = "redis://${docker_container.redis_main.name}:6379"
+  description = "Redis URL accessible via Docker network"
 }

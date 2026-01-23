@@ -1,5 +1,5 @@
 {
-	"name": "ollama",
+	"name": "redis",
 	"build": {
 		"dockerfile": "dev.Dockerfile",
 		"context": ".."
