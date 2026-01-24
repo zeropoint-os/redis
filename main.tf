@@ -64,14 +64,14 @@ resource "docker_container" "redis_main" {
 }
 
 # Outputs for zeropoint (container resource only)
-output "redis_main" {
+output "main" {
   value       = docker_container.redis_main
   description = "Main Redis container"
 }
 
 # Service ports for external access (defined but not bound to host)
 # Service ports for external access (defined but not bound to host)
-output "redis_main_ports" {
+output "main_ports" {
   value = {
     redis = {
       port        = 6379
