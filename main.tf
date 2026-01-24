@@ -75,7 +75,7 @@ output "main_ports" {
   value = {
     redis = {
       port        = 6379
-      protocol    = "redis"
+      protocol    = "tcp"
       transport   = "tcp"
       description = "Redis service port"
       default     = true
