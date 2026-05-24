@@ -41,7 +41,8 @@ The install will be performed using Docker-in-Docker.
 | `zp_module_id` | string | Unique identifier for this module instance (injected by zeropoint) | `"redis"` |
 | `zp_network_name` | string | Pre-created Docker network name (injected by zeropoint) | (required) |
 | `zp_arch` | string | Target architecture: amd64, arm64, etc. (injected by zeropoint) | `"amd64"` |
-| `zp_module_storage` | string | Host path for persistent storage (injected by zeropoint) | (required) |
+| `zp_module_dir` | string | Agent's working directory for this module — terraform state + cloned source (injected by zeropoint) | (required) |
+| `zp_storage_dir` | string | Isolated data root for this module — all bind mounts must live under here (injected by zeropoint) | (required) |
 
 ## Outputs
 
@@ -54,7 +55,7 @@ The install will be performed using Docker-in-Docker.
 This module supports multiple GPU vendors:
 
 # Persistence
-This module mounts `${zp_module_storage}/data` into the container's `/data` directory so Redis data is persisted on the host.
+This module mounts `${zp_storage_dir}/data` into the container's `/data` directory so Redis data is persisted on the host.
 
 ## Network & Service Discovery
 
